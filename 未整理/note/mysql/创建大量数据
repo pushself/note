@@ -1,0 +1,2 @@
+在mysql控制台执行：LOAD DATA LOCAL INFILE '/home//laolao/desktop/insert.sql' INTO TABLE `表` ( `字段`);
+insert.sql文件存储数据，每个字段的数据按\t分割，\r\n换行

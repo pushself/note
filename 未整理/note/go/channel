@@ -1,0 +1,130 @@
+channel零值是nil，对一个nil的channel发送和接收操作会永远阻塞
+
+make(chan int)//创建一个channel底层数据结构的引用，make创建的channel是无缓存的，指定第二个整形参数，表示channel的容量，容量大于0就是有缓存的channel  make(chan int, 3)
+
+相同类型可用==比较，也可以和nil比较
+
+
+接收发送都使用<-运算符
+
+ch := make(chan int)
+ch <- 输入的值
+接受值 = <- ch
+
+channel用close关闭
+	对已经执行close的channel执行发送操作会产生panic异常
+	读操作可以正常接收到以前发送的数据，数据都成功接受完了后续操作不再阻塞，会立即返回零值
+	如何判断一个channel是否被关闭，在接受channel值的时候多接受一个结果，这是一个布尔值
+	range可直接在channel上迭代，并且可以在channel被关闭后跳出循环
+	一个channel是否被关闭，当它没有被引用时将会被Go语言的垃圾自动回收器回收（不要和打开文件的操作搞混，打开的文件一定要自己关闭）
+	试图重复关闭一个channel将导致panic异常，试图关闭一个nil值的channel也将导致panic异常。关闭一个channels还会触发一个广播机制
+
+
+
+二、无缓存channel：
+	无缓存的channel发送操作会导致发送者goroutine阻塞（当前发送的goroutine阻塞），直到另一个goroutine在相同channel上进行接受操作，当发送的值通过channel成功传输后，才会取消阻塞继续执行下面的代码（反过来也一样，读操作会阻塞）无缓存channel的是同步操作（也叫同步channel）
+
+
+并发编程问题：x事件在y事件之前，不是表示x在时间上比y更早。表达的是保证再次之前的事件都已经完成，例如再次之前更新某些变量的操作已经完成，可以放心依赖这些已完成的事件
+	x既不是y之前也不是y之后，x、y是并行，。不代表同时发生，只是不确定x和y的执行顺序
+
+两个goroutine并发访问一个变量的问题，避免出现并发问题
+
+
+
+
+关闭网络连接中的写方向的连接将导致server程序收到一个文件（end-of-ﬁle）结束的信号。关闭网络连接中读方向的连接将导致后台goroutine的io.Copy函数调用返回一个“read from closed connection”
+
+通讯的事实：
+通迅发生时刻：消息事件
+
+
+三、串联的Channels（Pipeline）所谓的管道
+示例：
+func main() {
+	naturals := make(chan int)
+	squares := make(chan int)
+
+	go func() {
+		for x := 0; ; x++ {
+			naturals <- x
+		}
+	}()
+
+	go func() {
+		for {
+			x := <-naturals
+			squares <- x * x
+		}
+	}()
+
+	for {
+		fmt.Println(<-squares)
+	}
+}
+
+
+
+四、单向channel（这种限制在编译期检测，在函数参数上指明单向channel）
+	1、chan<- int   只发送的channel  //关闭操作只用于断言不再向channel发送新的数据，在发送者调用close
+	2、<-chan int	只接受的channel  //这里调用close是编译错误
+	3、双向channel   向    单向channel变量的赋值操作都将导致该隐式转换，但是反过来不行，单不能转成双
+
+
+示例：
+func counter(out chan<- int) {
+	for x := 0; x < 100; x++ {
+		out <- x
+
+	}
+	close(out)
+}
+
+func squarer(out chan<- int, in <-chan int) {
+	for v := range in {
+		out <- v * v
+		in <- v
+	}
+	close(out)
+}
+func printer(in <-chan int) {
+	for v := range in {
+		fmt.Println(v)
+	}
+}
+func main() {
+	naturals := make(chan int)
+	squares := make(chan int)
+
+	go counter(naturals)
+	go squarer(squares, naturals)
+	printer(squares)
+}
+
+
+五、带缓存channel
+	1、ch = make(chan string, 3)
+	2、先进先出，往尾部插入，头部删除
+	3、队列满了会造成写操作阻塞，直到执行接受操作而释放了新的队列空间。队列空了也是如此
+	4、获取缓存容量 cap(ch)
+	5、获取有效元素个数 len(ch)
+	6、在同一个goroutine将channel作为队列使用是错误的。Channel和goroutine的调度器机制是紧密相连的，一个发送操作——或许是整个程序——可能会永远阻塞
+
+
+
+
+
+
+六、并发退出
+	1、利用channel的关闭来进行广播，不要向channel发送值（因为channel执行close后，消费掉所有已发送值，接受channel的操作会立即被执行，并产生零值）
+
+2、无法在主函数退出的时候确认其已经释放了所有的资源
+	1.办法：取代掉直接从主函数返回，我们调用一个panic，然后runtime会把每一个goroutine的栈dump下来。如果main goroutine是唯一一个剩下的goroutine的话，他会清理掉自己的一切资源。但是如果还有其它的goroutine没有退出，他们可能没办法被正确地取消掉，也有可能被取消但是取消操作会很花时间
+
+
+七、注意问题
+1、在使用channel容易造成goroutine泄漏，channel所有的接收方不再接收消息的时候要把channel排空，避免其他发送者goroutine继续发送造成堵塞
+2、在使用go关键字的时候没有办法保证goroutine的执行顺序，也就是说他们的执行顺序跟调用顺序无关（非常重要一定要注意）
+3、defer在函数出错的时候依然会执行吗？
+4、time.Tick()即使没有goroutine从该channel接收值，依然会向该channel发送值，goroutine泄漏（只有当程序整个生命周期都需要这个时间时我们使用它才比较合适 “time.NewTicker(1 * time.Second)”）
+5、break使用标签

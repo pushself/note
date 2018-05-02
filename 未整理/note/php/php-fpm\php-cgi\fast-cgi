@@ -1,0 +1,29 @@
+CGI是为了保证web server传递过来的数据是标准格式的，方便CGI程序的编写者
+
+	nginx本身不处理http
+	nginx无法解析*.php文件，需要把*.php文件交给php解析器
+	nginx需要把一些数据传给php解析器，CGI就是用来规定需要传输那些数据、以什么格式传送
+	CGI是协议
+
+php的解析器是php-cgi（本身只是实现了cgi协议，不会进程管理）
+php-cgi没有实习fastcgi
+
+错误的理解：PHP-CGI是PHP自带的FastCGI管理器
+	php-cgi只是解析php脚本的程序
+
+
+Fastcgi：提高CGI程序性能，主要行为是将CGI解释器进程保持在内存中并因此获得较高的性能
+	CGI解释器保持在内存中并接受FastCGI进程管理器调度
+	个人理解：fastcgi就是一个cgi进程管理的一个协议或者标准，而php-fpm实现了这个规则
+
+
+php-fpm：一个实现了Fastcgi的的程序
+	管理对象是php-cgi
+
+nginx：请求->fastcgi管理进程->fastcgi管理进程选择cgi子进程并处理结果返回
+
+
+1、Web Server启动时载入FastCGI进程管理器（IIS ISAPI或Apache Module)
+2、FastCGI进程管理器自身初始化，启动多个CGI解释器进程(可见多个php-cgi)并等待来自Web Server的连接。
+3、当客户端请求到达Web Server时，FastCGI进程管理器选择并连接到一个CGI解释器。Web server将CGI环境变量和标准输入发送到FastCGI子进程php-cgi。
+4、FastCGI子进程完成处理后将标准输出和错误信息从同一连接返回Web Server。当FastCGI子进程关闭连接时，请求便告处理完成。FastCGI子进程接着等待并处理来自FastCGI进程管理器(运行在Web Server中)的下一个连接。 在CGI模式中，php-cgi在此便退出了。

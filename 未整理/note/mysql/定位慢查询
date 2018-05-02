@@ -1,0 +1,18 @@
+1、show [session|global] status命令查看SQL执行频率（可以看出应用是写入操作多还是读操作多）
+	其中的session来表示当前的连接的统计结果（默认）
+	global来表示自数据库上次启动至今的统计结果
+例子：
+	show status like ‘Com_%’;（Com_select,Com_insert,Com_update,Com_delete）
+Connections：试图连接MySQL服务器的次数
+Uptime：服务器工作的时间（单位秒）
+Slow_queries：慢查询的次数 (默认是慢查询时间10s)
+
+show variables like ‘long_query_time’ ; //可以显示当前慢查询时间
+set long_query_time=1 ;//可以修改慢查询时间
+
+修改my.cnf配置文件将慢查询写入日志：
+slow_query_log = on #开启慢查询日志
+
+slow_query_log_file = filename #指定日志文件保存路径，不指定的话默认在数据库文件目录下，名为hostname-slow.log
+
+long_query_time = 2 #指定达到多少秒才算慢查询

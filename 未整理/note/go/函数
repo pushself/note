@@ -1,0 +1,51 @@
+名函数中的循环变量快照问题：
+例子1：
+func main() {
+	ch := make(chan struct{})
+
+	filenames := []string{"a", "b", "c", "d", "e"}
+	for _, f := range filenames {
+		go func() {
+			fmt.Println(f)
+			ch <- struct{}{}
+		}()
+	}
+
+	for range filenames {
+		<-ch
+	}
+}
+
+输出：
+$:e
+$:e
+$:e
+$:e
+$:e
+
+
+例子2：
+func main() {
+	ch := make(chan struct{})
+
+	filenames := []string{"a", "b", "c", "d", "e"}
+	for _, f := range filenames {
+		go func(f string) {
+			fmt.Println(f)
+			ch <- struct{}{}
+		}(f)
+	}
+
+	for range filenames {
+		<-ch
+	}
+}
+
+输出：
+$:e
+$:a
+$:b
+$:c
+$:d
+1、变量f是被所有匿名函数值所共享，且会被连续的循环迭代所更新
+2、例子二中匿名函数显式的添加参数，确保使用的f是当前for循环是的f（个人理解：例子二会进行值拷贝）

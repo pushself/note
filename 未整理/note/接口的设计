@@ -1,0 +1,28 @@
+token安全问题解决办法：给每个接口添加签名，给客户端分配密钥，将密钥跟请求参数组合成源串，根据签名算法生成签名，请求时将签名值跟参数提交给服务器
+
+json只有六种数据类型：
+Number：整数或浮点数
+String：字符串
+Boolean：true 或 false
+Array：数组包含在方括号[]中
+Object：对象包含在大括号{}中
+Null：空类型
+
+服务器返回的数据结构，一般为：
+
+{ code：0 message: "success" data: { key1: value1, key2: value2, ... } } 
+code: 状态码，0表示成功，非0表示各种不同的错误
+message: 描述信息，成功时为"success"，错误时则是错误信息
+data: 成功时返回的数据，类型为对象或数组
+
+属于客户端的错误和服务端的错误也要区分，比如1XX表示客户端的错误，2XX表示服务端的错误。
+
+每个接口有各自的版本，一般为接口添加个version的参数。
+整个接口系统有统一的版本，一般在URL中添加版本号，比如http://api.domain.com/v2。
+
+
+接口文档管理：
+1、swagger
+2、RAP https://github.com/thx/RAP 
+	swagger-php :https://github.com/zircote/swagger-php
+3、API Blueprint

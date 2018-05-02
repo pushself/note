@@ -1,0 +1,100 @@
+HTTP请求(HTTP Request)分为三部分：
+	1.请求行
+	   1、请求行的写法是固定的，又是那部分构成：
+		1.请求方法（GET、POST）
+		2.请求的网址
+		3.HTTP版本
+	2.请求头（HTTP头只是一个标签而已）
+	   1.在HTTP请求可以是3种HTTP头：1.请求头(request header)  2.普通头(general header)  3.实体头(entity header)【通常来说，由于Get请求往往不包含内容实体，因此也不会有实体头。】
+	3.内容
+	   1.内容只在POST请求中存在，因为GET请求并不包含任何实体。
+
+HTTP响应(HTTP Response)：HTTP响应在结构上很类似于HTTP请求,也是由三部分组成
+	1.状态行
+	   典型的HTTP状态：HTTP/1.1 200 OK
+	   第一部分是HTTP版本，第二部分是响应状态码，第三部分是状态码的描述，因此也可以把第二和第三部分看成一个部分。
+	   信息类 (100-199)
+
+	   响应成功 (200-299)
+
+	   重定向类 (300-399)
+
+	   客户端错误类 (400-499)
+
+	   服务端错误类 (500-599)
+	2.HTTP头
+	   1.HTTP响应中包含的头包括1.响应头(response header) 2.普通头(general header) 3.实体头(entity header)。
+	3.返回内容
+	   1.所请求的内容
+
+HTTP响应的内容不只是HTML，也可以是其他类型，而浏览器如何正确对接收的信息进行处理？
+1、这是通过媒体类型确定的：HTTP头的Content-Type描述了响应信息的类型（Content-Type：text/html）
+2、媒体类型的格式为：大类/小类（text是大类，html是小类）
+3、  IANA(The Internet Assigned Numbers Authority，互联网数字分配机构)定义了8个大类的媒体类型，分别是:
+	application— (比如: application/vnd.ms-excel.)
+
+	audio (比如: audio/mpeg.)
+
+	image (比如: image/png.)
+
+	message (比如,:message/http.)
+
+	model(比如:model/vrml.)
+
+	multipart (比如:multipart/form-data.)
+
+	text(比如:text/html.)
+
+	video(比如:video/quicktime.)
+
+
+HTTP头：
+1、通用头(General header)
+
+    通用头即可以包含在HTTP请求中，也可以包含在HTTP响应中。通用头的作用是描述HTTP协议本身。比如描述HTTP是否持久连接的Connection头，HTTP发送日期的Date头，描述HTTP所在TCP连接时间的Keep-Alive头,用于缓存控制的Cache-Control头等。
+
+ 
+
+2、实体头(Entity header)
+
+    实体头是那些描述HTTP信息的头。既可以出现在HTTP POST方法的请求中，也可以出现在HTTP响应中。比如图5和图6中的Content-Type和Content-length都是描述实体的类型和大小的头都属于实体头。其它还有用于描述实体的Content-Language,Content-MD5,Content-Encoding以及控制实体缓存的Expires和Last-Modifies头等。
+
+ 
+
+3、请求头(HTTP Request Header)
+
+    请求头是那些由客户端发往服务端以便帮助服务端更好的满足客户端请求的头。请求头只能出现在HTTP请求中。比如告诉服务器只接收某种响应内容的Accept头，发送Cookies的Cookie头，显示请求主机域的HOST头,用于缓存的If-Match，If-Match-Since,If-None-Match头，用于只取HTTP响应信息中部分信息的Range头，用于附属HTML相关请求引用的Referer头等。
+
+
+4、响应头(HTTP Response Header)
+
+    HTTP响应头是那些描述HTTP响应本身的头，这里面并不包含描述HTTP响应中第三部分也就是HTTP信息的头（这部分由实体头负责）。比如说定时刷新的Refresh头，当遇到503错误时自动重试的Retry-After头，显示服务器信息的Server头，设置COOKIE的Set-Cookie头，告诉客户端可以部分请求的Accept-Ranges头等。
+
+
+
+    1 URL, 即http访问的地址
+
+　　2 request method, 报文的请求方式
+
+　　3 status code, 状态码以及状态短语
+
+　　4 Accept Encoding, 内容编码
+
+　　5 Connection, 连接方式
+
+　　6 Cookie, 添加的cookie内容
+
+　　7 Host, 目标主机
+
+　　8 User-Agent, 客户端浏览器的相关信息
+
+　　9 Set-Cookie, 指定想要在Cookie中保存的内容
+
+Accept-Encoding定义了内容编码的格式:(由于某些报文的内容过大，因此在传输时，为了减少传输的时间，会采取一些压缩的措施。)
+　  gzip：GNU压缩格式
+
+　　compress：UNIX系统的标准压缩格式
+
+　　deflate：是一种同时使用了LZ77和哈弗曼编码的无损压缩格式
+
+　　identity：不进行压缩

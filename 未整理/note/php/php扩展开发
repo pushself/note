@@ -1,0 +1,53 @@
+ZEND_NUMARGS()->获取用户实际传入参数的数目
+ZEND_NUM_ARGS()->
+zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_DC, "s", &arg, &arg_len)
+	TSRMLS_CC：用于线程安全,define和declare时这样写，调用的时候改用TSRMLS_CC
+	type_spec:格式化字符串
+		b Boolean
+		l Integer
+		d Floating point
+		s String
+		r Resource
+		a Array
+		o Object instance
+		O Object instance of a specified type
+		z Non-specific zval
+		Z Dereferenced non-specific zval
+	string类型参数需要两个参数，分别获取字符串指针和长度（php没有参用C串，不能根据0判断字符串结尾）
+	long、double、boolean、string之间，zend自动进行类型转换；resource和array则不进行转换
+int zend_get_parameters_array_ex(int param_count,zval ***argument_array TSRMLS_DC):
+	底层访问函数参数方法
+访问zval值:
+	Z_LVAL(zval)
+	Z_DVAL(zval)
+	Z_STRVAL(zval)
+	Z_STRLEN(zval)
+	Z_ARRVAL(zval)
+	Z_RESVAL(zval)
+	Z_OBJVAL(zval)
+	Z_BVAL (zval)->返回值进行了类型转换
+	Z_TYPE(zval)
+
+	(zval).value.lval
+	(zval).value.dval
+	(zval).value.str.val
+	(zval).value.str.len
+	(zval).value.ht
+	(zval).value.lval
+	(zval).value.obj
+	((zend_bool)(zval).value.lval)
+	(zval).type
+类型转换：将目标zval转换为指定类型，接受zval**作为参数
+	下面函数如果无法转换，会将zval直射为目标类型的虚值（0，false，空串），函数总是成功返回
+convert_to_boolean_ex()
+convert_to_long_ex()
+convert_to_double_ex()convert_to_string_ex()
+convert_to_array_ex()
+convert_to_object_ex()
+convert_to_null_ex()
+
+判断传入zval是否引用：
+	PZVAL_IS_REF(zval*)
+	SEPARATE_ZVAL(zval**)：对于zval分离，会自动判断refcount，并将新zval的地址填充到参数里
+
+

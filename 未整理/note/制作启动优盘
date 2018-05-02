@@ -1,0 +1,4 @@
+1、fdisk -l
+2、umount 驱动名称  //取消挂载
+3、mkfs.fat 驱动名 -I
+4、dd if=镜像 of=驱动

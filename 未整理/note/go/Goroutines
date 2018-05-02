@@ -1,0 +1,43 @@
+每一个并发的执行单元叫做一个goroutine -》 G
+
+程序启动时，主函数main在一个单独的goroutine运行（main goroutine）
+	main goroutine关闭后子goroutine也会被关闭，即使子goroutine还没有执行完毕也会被直接打断。
+	没有其他编程可以让一个goroutine打断另一个goroutine，但是可以用channel来进行goroutine之间的通信，通过channel让另一个接收channel的goroutime自行结束执行
+
+新的goroutine用go来创建
+例子：go funcName（）
+
+
+go后跟的函数的参数会在go语句自身执行时被求值,因此input.Text()会在main goroutine中被求值
+
+func main() {
+go test1()
+}
+
+func test1() {
+go test2(input.Text())
+}
+
+func test2(shout string) {
+}
+
+goroutine泄漏：
+
+例子：
+func mirroredQuery() string {
+    responses := make(chan string, 3)
+    go func() { responses <- request("asia.gopl.io") }()
+    go func() { responses <- request("europe.gopl.io") }()
+    go func() { responses <- request("americas.gopl.io") }()
+    return <-responses // return the quickest response
+}
+
+func request(hostname string) (response string) { /* ... */ }
+假如例子不带缓存的情况下：
+	1、上面例子只会接受一个channel消息，所有剩下两个不会被接受，goroutine会被永远卡住，这是一个bug，称为goroutine泄漏
+	2、与垃圾变量不同，泄漏的goroutine不会被自动回收
+	3、确保每个不再需要的goroutine能正常退出至关重要
+
+
+并发安全的类型：
+	channel、net.Conn

@@ -1,0 +1,70 @@
+use Disque\Connection\Credentials;
+use Disque\Client;
+
+$nodes = [
+    new Credentials('127.0.0.1', 7711),
+    new Credentials('127.0.0.1', 7712, 'password'),
+];
+
+$disque = new Client($nodes); 创建一个客户端
+
+创建一个作业
+$job = new \Disque\Queue\Job(['name' => 'Mariano']);
+
+获取队列，将作业推送给它
+$disque->queue('my_queue')->push($job);
+
+
+指定选项，一分钟后将从队列中删除
+$job = new \Disque\Queue\Job(['description' => 'To be handled within the minute!']);
+$disque->queue('my_queue')->push($job, ['ttl' => 60]);
+
+
+获取作业，如果没有作业将被阻塞，直到队列中被放入作业
+$queue = $disque->queue('my_queue');
+$job = $queue->pull();
+var_dump($job->getBody());
+$queue->processed($job);
+
+
+一秒钟后如果没有作业则返回null
+$queue = $disque->queue('my_queue');
+while (true) {
+    $job = $queue->pull(1000);
+    if (is_null($job)) {
+        // Do something else while waiting!
+        echo "Still waiting...\n";
+        continue;
+    }
+
+    echo "GOT JOB!\n";
+    var_dump($job->getBody());
+    $queue->processed($job);
+}
+
+
+
+不懂
+$job = new \Disque\Queue\Job(['name' => 'Mariano']);
+$disque->queue('my_queue')->schedule($job, new \DateTime('+15 seconds'));
+
+工作的确定  避免被放回队列
+$disque->queue('my_queue')->processed($job);
+
+
+
+$disque->queue('my_queue')->failed($job);
+
+
+
+
+
+告诉队列仍然在工作
+$queue = $disque->queue('my_queue');
+$job = $queue->pull();
+for ($i=0; $i < 10; $i++) {
+    // Every 2 seconds inform that we are working on the job
+    $queue->processing($job);
+}
+// We are done with the job
+$queue->processed($job);

@@ -1,0 +1,3 @@
+gofmt工具把代码格式化为标准格式
+goimports，可以根据代码需要, 自动地添加或删除import声明
+$ go get golang.org/x/tools/cmd/goimports

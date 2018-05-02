@@ -1,0 +1,46 @@
+insserv: warning: script 'httpd' missing LSB tags and overrides
+
+
+ubuntu没有chkconfig命令需要使用update-rc.d
+chkconfig --add ServerName
+update-rc.d ServerName defaults
+
+1. /etc/init.d 目录下存放系统启动时执行的脚本
+2. /etc/rcX.d 目录下存放脚本在不同运行级别下的链接文件
+3. 通过修改 /etc/rcX.d 目录可完成 Linux 下启动脚本的配置
+4. 通过 update-rc.d 命令快速实现上一条描述的情况
+
+如果在某一运行级别下，对应的 /etc/rcX.d 下的链接文件决定了启动时系统对于这些脚本所采取的行动
+
+
+编译php报错：
+/usr/lib/x86_64-linux-gnu/liblber-2.4.so.2: error adding symbols: DSO missing from command line
+遇到这种类似的情况，说明「./configure 」沒抓好一些环境变数值。
+解决办法 Makefile 找到 EXTRA_LIBS 行，在行末添加 ‘ -llber ‘ 
+
+
+错误信息：error while loading shared libraries: libcrypto.so.1.1: cannot open shared object file: No（缺少crypto库）
+crypto库是在openssl库里面的，查看openssl version查看输出结果，看看openssl是否正常
+用ldd查看openssl动态库是否链接正常，如果动态库找不到，可以将ssl  crypto动态库软链接到/usr/lib
+
+
+安装libpng时可能会出现找不到libz库，可以使用LDFLAGS、CFLAGS环境变量设置libz路径
+
+
+
+安装mysql：
+1、编译安装
+2、将安装目录下的my-default.cnf拷贝到/etc/my.cnf，并配置参数
+3、初始化数据库
+4、将安装目录的启动脚本mysql.server拷贝到/etc/init.d目录下，并添加到系统服务
+5、mysql5.7版本根据编译参数会生成随机过期密码，密码保存在用户家目录的.mysql_secret文件中
+
+
+
+gcc编译分编译时路径以及运行时路径
+编译好的程序、库文件不再以来头文件，动态库运行时需要按照路径查找链接库的位置;/etc/ld.so.cnf配置了默认搜索路径，如果编译时提示找不到库可以将库文件链接到搜索路径中
+
+
+
+
+
