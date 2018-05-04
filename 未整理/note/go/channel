@@ -125,6 +125,6 @@ func main() {
 七、注意问题
 1、在使用channel容易造成goroutine泄漏，channel所有的接收方不再接收消息的时候要把channel排空，避免其他发送者goroutine继续发送造成堵塞
 2、在使用go关键字的时候没有办法保证goroutine的执行顺序，也就是说他们的执行顺序跟调用顺序无关（非常重要一定要注意）
-3、defer在函数出错的时候依然会执行吗？
+3、defer在函数出错的时候依然会执行吗？(defer在函数出现phinc异常后会被调用)
 4、time.Tick()即使没有goroutine从该channel接收值，依然会向该channel发送值，goroutine泄漏（只有当程序整个生命周期都需要这个时间时我们使用它才比较合适 “time.NewTicker(1 * time.Second)”）
 5、break使用标签
