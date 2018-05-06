@@ -1,0 +1,25 @@
+CTRL_IS_ACTIVE()    pt_ctrl_is_active(&PTG(ctrl), PTG(pid))
+
+
+obtain_zend_function  获取zend函数
+filter_frame按功能和类名过滤框架
+frame_build帧的追踪操作
+request_build跟踪请求操作 	 RSHUTDOWN
+request_send   			RSHUTDOWN
+status_build跟踪状态的操作
+status_send
+repr_zval追踪杂项功能
+handle_error
+handle_command			RINIT
+pt_execute_core跟踪执行器替换
+
+
+
+frame_set_retval
+frame_send
+
+
+static void (*ori_execute_ex)(zend_execute_data *execute_data);
+static void (*ori_execute_internal)(zend_execute_data *execute_data, zval *return_value);
+ZEND_API void pt_execute_ex(zend_execute_data *execute_data);
+ZEND_API void pt_execute_internal(zend_execute_data *execute_data, zval *return_value);
