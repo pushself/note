@@ -2,7 +2,7 @@ CTRL_IS_ACTIVE()    pt_ctrl_is_active(&PTG(ctrl), PTG(pid))
 
 
 obtain_zend_function  获取zend函数
-filter_frame按功能和类名过滤框架
+filter_frame   按功能和类名过滤框架
 frame_build帧的追踪操作
 request_build跟踪请求操作 	 RSHUTDOWN
 request_send   			RSHUTDOWN
@@ -10,7 +10,7 @@ status_build跟踪状态的操作
 status_send
 repr_zval追踪杂项功能
 handle_error
-handle_command			RINIT
+handle_command			RINIT   发送数据到共享内存
 pt_execute_core跟踪执行器替换
 
 
@@ -23,3 +23,45 @@ static void (*ori_execute_ex)(zend_execute_data *execute_data);
 static void (*ori_execute_internal)(zend_execute_data *execute_data, zval *return_value);
 ZEND_API void pt_execute_ex(zend_execute_data *execute_data);
 ZEND_API void pt_execute_internal(zend_execute_data *execute_data, zval *return_value);
+
+
+
+
+
+
+union _zend_function {
+	zend_uchar type;	/* MUST be the first element of this struct! */
+	uint32_t   quick_arg_flags;
+
+	struct {
+		zend_uchar type;  /* never used */
+		zend_uchar arg_flags[3]; /* bitset of arg_info.pass_by_reference */
+		uint32_t fn_flags;
+		zend_string *function_name;
+		zend_class_entry *scope;
+		union _zend_function *prototype;
+		uint32_t num_args;
+		uint32_t required_num_args;
+		zend_arg_info *arg_info;
+	} common;
+
+	zend_op_array op_array;
+	zend_internal_function internal_function;
+};
+
+
+struct _zend_execute_data {
+	const zend_op       *opline;           /* executed opline                */
+	zend_execute_data   *call;             /* current call                   */
+	zval                *return_value;
+	zend_function       *func;             /* executed function              */
+	zval                 This;             /* this + call_info + num_args    */
+	zend_execute_data   *prev_execute_data;
+	zend_array          *symbol_table;
+#if ZEND_EX_USE_RUN_TIME_CACHE
+	void               **run_time_cache;   /* cache op_array->run_time_cache */
+#endif
+#if ZEND_EX_USE_LITERALS
+	zval                *literals;         /* cache op_array->literals       */
+#endif
+};
