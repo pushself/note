@@ -1,0 +1,10 @@
+laravel会在sql查询构造器上替换占位符的时候加上双引号之类的
+
+git log FileName
+git show commit-id FileName //查看指定版本的修改
+git reset commit-id FileName //回滚到指定版本
+
+CGI  CLI这类SAPI请求执行完MINIT后立即RINIT（fpm）
+
+MINIT-》RINIT-》RSHUTDOWN-》MSHUTDOWN
+CGI  CLI没有下一个请求RSHUTDOWN之后会调用MSHUTDOWN

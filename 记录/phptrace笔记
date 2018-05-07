@@ -18,11 +18,13 @@ pt_execute_core跟踪执行器替换
 frame_set_retval
 frame_send
 
-
+这四个函数调用pt_execute_core
 static void (*ori_execute_ex)(zend_execute_data *execute_data);
 static void (*ori_execute_internal)(zend_execute_data *execute_data, zval *return_value);
 ZEND_API void pt_execute_ex(zend_execute_data *execute_data);
 ZEND_API void pt_execute_internal(zend_execute_data *execute_data, zval *return_value);
+
+STD_PHP_INI_ENTRY
 
 
 
@@ -65,3 +67,61 @@ struct _zend_execute_data {
 	zval                *literals;         /* cache op_array->literals       */
 #endif
 };
+
+
+typedef struct {
+    uint8_t type;               /* request type, begin or end */
+    sds sapi;                   /* sapi name eg: fpm-fcgi */
+    sds script;                 /* request script */
+    int64_t time;               /* request time */
+
+    sds method;                 /* request method */
+    sds uri;                    /* request uri */
+
+    int argc;                   /* arguments part, available in cli */
+    sds *argv;
+} pt_request_t;
+
+
+php_trace_init_globals函数做了一些全局变量初始化
+trace全局变量
+    zend_bool               enable;
+    long                    dotrace;        /* flags of trace */
+
+    char                    *data_dir;      /* data path, should be writable */
+
+    pt_ctrl_t               ctrl;           /* ctrl module */
+    char                    ctrl_file[256]; /* ctrl filename */
+
+    int                     sock_fd;        /* comm socket */
+    char                    sock_addr[256]; /* comm address */
+
+    pid_t                   pid;            /* process id */
+    long                    level;          /* nesting level */
+
+    pt_request_t            request;        /* current request info */
+
+    long                   *exc_time_table; /* exclusive time table */
+    size_t                  exc_time_len;   /* length of time table */
+
+    pt_filter_t             pft;            /* filter module */
+
+
+typedef struct {
+    pt_segment_t seg;
+} pt_ctrl_t;
+
+typedef struct {
+    size_t size;
+    void *addr;
+} pt_segment_t;
+typedef struct {
+    uint8_t type;                          /* filter type */
+    sds content;                           /* filter content */
+}pt_filter_t;
+
+
+
+
+
+typedef char *sds;
