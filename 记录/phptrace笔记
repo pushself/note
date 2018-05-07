@@ -68,7 +68,7 @@ struct _zend_execute_data {
 #endif
 };
 
-
+sds是char类型
 typedef struct {
     uint8_t type;               /* request type, begin or end */
     sds sapi;                   /* sapi name eg: fpm-fcgi */
@@ -115,13 +115,30 @@ typedef struct {
     size_t size;
     void *addr;
 } pt_segment_t;
+
 typedef struct {
     uint8_t type;                          /* filter type */
     sds content;                           /* filter content */
 }pt_filter_t;
 
+pt_filter_t             pft; 
 
+typedef struct {
+    uint8_t type;               /* frame type, entry or exit */
+    uint8_t functype;           /* function flags of PT_FUNC_xxx */
 
+    uint32_t lineno;            /* entry lineno */
+    sds filename;               /* entry filename */
+    sds class;                  /* class name */
+    sds function;               /* function name */
+    uint32_t level;             /* nesting level */
 
+    uint32_t arg_count;         /* arguments number */
+    sds *args;                  /* arguments represent string */
+    sds retval;                 /* return value represent string */
+
+    int64_t inc_time;           /* inclusive wall time */
+    int64_t exc_time;           /* exclusive wall time */
+} pt_frame_t;
 
 typedef char *sds;
