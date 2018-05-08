@@ -3,12 +3,19 @@ CTRL_IS_ACTIVE()    pt_ctrl_is_active(&PTG(ctrl), PTG(pid))
 
 obtain_zend_function  获取zend函数
 filter_frame   按功能和类名过滤框架
-frame_build帧的追踪操作
+frame_build   帧的追踪操作  这个函数用来解析php的调用
+
+frame_set_retval  php<7才游泳有用
+frame_send
+
 request_build跟踪请求操作 	 RSHUTDOWN
 request_send   			RSHUTDOWN
+
 status_build跟踪状态的操作
 status_send
-repr_zval追踪杂项功能
+
+//追踪杂项功能
+repr_zval   //用来解析参数
 handle_error
 handle_command			RINIT   发送数据到共享内存
 pt_execute_core跟踪执行器替换

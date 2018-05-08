@@ -1,0 +1,1 @@
+php   任何字符串变量转int都是0   'dsfds' == 0 true
