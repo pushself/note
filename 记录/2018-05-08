@@ -1,1 +1,24 @@
-php   任何字符串变量转int都是0   'dsfds' == 0 true
+php   任何字符串变量转int都是0   's' == 0 true
+
+
+is_numeric('1') true
+is_numeric('a') false
+is_numeric('0a') false
+
+取消合并
+git reset commimt-id
+
+
+# 这让你的工作目录和 635620e提交所处的状态完全一致你可以查看文件，编译项目，运行测试，甚至编辑文件而不需要考虑是否会影响项目的当前状态,你所做的一切 都不会 被保存到仓库中
+git checkout 635620e
+
+
+删除未跟踪文件
+git clean -fd
+-f 删除文件
+-d  删除目录
+
+
+
+死循环会一直抢占CPU资源造成CPU沾满，跟异步不同，异步会让进程睡眠，不会消耗系统资源。死循环则是一直处于执行状态需要消耗系统资源
+1、在一个log进程中使用了while但是while里面的io操作没有设置成阻塞的方式，造成每次不管有没有

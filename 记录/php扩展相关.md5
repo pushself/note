@@ -43,3 +43,9 @@ struct _zend_execute_data {
 #endif
 };
 ```
+
+
+
+
+####操作相关
+	zend_hash_num_elements(Z_ARRVAL_P(zv)) //计算数组大小
