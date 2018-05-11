@@ -26,10 +26,12 @@
 #include "zend_extensions.h"
 #include "SAPI.h"
 
+#include "sds/sds.h"
+
 #include "trace_comm.h"
 #include "trace_time.h"
 #include "trace_type.h"
-#include "sds/sds.h"
+
 #include "trace_filter.h"
 
 
@@ -87,7 +89,7 @@
 typedef unsigned long zend_uintptr_t;
 #endif
 
-
+#if TRACE_DEBUG
 ZEND_BEGIN_ARG_INFO(trace_set_filter_arginfo, 0)
         ZEND_ARG_INFO(0, filter_type)
         ZEND_ARG_INFO(0, filter_content)
@@ -99,8 +101,11 @@ PHP_FUNCTION(trace_end);
 PHP_FUNCTION(trace_status);
 PHP_FUNCTION(trace_dump_address);
 PHP_FUNCTION(trace_set_filter);
-PHP_FUNCTION(my_frace_start);
-PHP_FUNCTION(my_frace_end);
+#endif
+
+PHP_FUNCTION(my_trace_start);
+PHP_FUNCTION(my_trace_end);
+
 
 static void frame_build(pt_frame_t *frame, zend_bool internal, unsigned char type, zend_execute_data *caller, zend_execute_data *ex, zend_op_array *op_array TSRMLS_DC);
 static int frame_send(pt_frame_t *frame TSRMLS_DC);
@@ -149,22 +154,18 @@ extern sapi_module_struct sapi_module;
 
 /* True global resources - no need for thread safety here */
 static int le_trace;
-zval my_data;
-static int my_a = 0;
-static int my_b = 0;
-static int my_c = 0;
-static int my_d = 0;
-
-
+zval my_return_arr;
 /* Every user visible function must have an entry in trace_functions[]. */
 const zend_function_entry trace_functions[] = {
-    PHP_FE(my_frace_start, NULL)
-    PHP_FE(my_frace_end, NULL)
+    PHP_FE(my_trace_start, NULL)
+    PHP_FE(my_trace_end, NULL)
+#if TRACE_DEBUG
     PHP_FE(trace_start, NULL)
     PHP_FE(trace_end, NULL)
     PHP_FE(trace_status, NULL)
     PHP_FE(trace_dump_address, NULL)
     PHP_FE(trace_set_filter, trace_set_filter_arginfo)
+#endif
 #ifdef PHP_FE_END
     PHP_FE_END  /* Must be the last line in trace_functions[] */
 #else
@@ -207,6 +208,8 @@ PHP_INI_END()
 /* php_trace_init_globals */
 static void php_trace_init_globals(zend_trace_globals *ptg)
 {
+
+
     ptg->enable = ptg->dotrace = 0;
     ptg->data_dir = NULL;
 
@@ -402,13 +405,22 @@ PHP_MINFO_FUNCTION(trace)
 
     DISPLAY_INI_ENTRIES();
 }
-
+PHP_FUNCTION(my_trace_start)
+{
+    PTG(dotrace) |= TRACE_TO_OUTPUT;
+    array_init(&my_return_arr);
+}
+PHP_FUNCTION(my_trace_end)
+{
+    PTG(dotrace) &= ~TRACE_TO_OUTPUT;
+    RETURN_ARR(my_return_arr.value.arr);
+}
 
 /**
  * Trace Interface
  * --------------------
  */
-
+#if TRACE_DEBUG
 PHP_FUNCTION(trace_start)
 {
     PTG(dotrace) |= TRACE_TO_OUTPUT;
@@ -416,7 +428,7 @@ PHP_FUNCTION(trace_start)
 
 PHP_FUNCTION(trace_end)
 {
-    PTG(dotrace) |= TRACE_TO_OUTPUT;
+    PTG(dotrace) &= ~TRACE_TO_OUTPUT;
 }
 
 PHP_FUNCTION(trace_status)
@@ -581,17 +593,8 @@ PHP_FUNCTION(trace_set_filter)
     PTG(pft).content = sdsnewlen(P7_STR(filter_content), P7_STR_LEN(filter_content));
     RETURN_TRUE;
 }
+#endif
 
-PHP_FUNCTION(my_frace_start)
-{
-    PTG(dotrace) |= TRACE_TO_OUTPUT;
-    array_init(&my_data);
-}
-PHP_FUNCTION(my_frace_end)
-{
-    PTG(dotrace) |= TRACE_TO_OUTPUT;
-    RETURN_ARR(my_data.value.arr);
-}
 /**
  * Obtain zend function
  * -------------------
@@ -744,22 +747,21 @@ static void frame_build(pt_frame_t *frame, zend_bool internal, unsigned char typ
         if (frame->arg_count) {
             i = 0;
             zval *p = ZEND_CALL_ARG(ex, 1);
+            frame->my_args = p;
             if (ex->func->type == ZEND_USER_FUNCTION) {
                 uint32_t first_extra_arg = ex->func->op_array.num_args;
 
                 if (first_extra_arg && frame->arg_count > first_extra_arg) {
                     while (i < first_extra_arg) {
+                        printf("开始1：%p\n", p);
                         frame->args[i++] = repr_zval(p++, 32);
                     }
                     p = ZEND_CALL_VAR_NUM(ex, ex->func->op_array.last_var + ex->func->op_array.T);
                 }
             }
             while(i < frame->arg_count) {
+                printf("开始2：%p\n", p);
                 frame->args[i++] = repr_zval(p++, 32);
-                my_b++;
-                char buffer[80];
-                sprintf(buffer, "%s  %d", frame->function, my_b);
-                        add_assoc_zval(&my_data, buffer, p);
             }
         }
 #endif
@@ -1317,6 +1319,7 @@ ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zva
             frame_send(&frame TSRMLS_CC);
         }
         if (dotrace & TRACE_TO_OUTPUT) {
+            frame.my_tmp = &my_return_arr;
             pt_type_display_frame(&frame, 1, "> ");
         }
 
@@ -1382,18 +1385,10 @@ ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zva
 #else
             if (return_value) { /* internal */
                 frame.retval = repr_zval(return_value, 32);
-                 my_c++;
-                char buffer[80];
-                sprintf(buffer, "a  %s   %d", frame.function, my_c);
-                        add_assoc_zval(&my_data, buffer, return_value);
-               
+                frame.my_return = return_value;
             } else if (execute_data->return_value) { /* user function */
                 frame.retval = repr_zval(execute_data->return_value, 32);
-                // add_next_index_zval(&my_data, execute_data->return_value);
-                my_d++;
-                char buffer[80];
-                sprintf(buffer, "b  %s  %d", frame.function, my_d);
-                        add_assoc_zval(&my_data, buffer, execute_data->return_value);
+                frame.my_return = execute_data->return_value;
             }
 #endif
         }
@@ -1404,6 +1399,7 @@ ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zva
             frame_send(&frame TSRMLS_CC);
         }
         if (PTG(dotrace) & TRACE_TO_OUTPUT & dotrace) {
+            frame.my_tmp = &my_return_arr;
             pt_type_display_frame(&frame, 1, "< ");
         }
 

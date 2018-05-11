@@ -108,3 +108,14 @@ typedef struct {
 } pt_frame_t;
 
 typedef char *sds;
+
+
+
+
+函数名：
+参数数组：
+	参数1
+	参数2
+文件：
+行号：
+返回值：

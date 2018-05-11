@@ -159,3 +159,6 @@ RETURN_ARR(result.value.arr);
 
 
 ##ZEND_API `Zend/zend_API.h`
+
+####数组
+####函数

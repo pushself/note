@@ -1,20 +1,11 @@
 <?php
-
-
-my_frace_start();
-$b = show([1]);
-
-function show($arr)
+my_trace_start();
+$arr = [123,1];
+test($arr);
+test($arr);
+function test($arr)
 {
-	$a = $arr;
-	return show2([2]);
+return $arr;
 }
-function show2($arr)
-{
-	$a = $arr;
-	return [3];
-}
-$a = my_frace_end();
+$a = my_trace_end();
 var_dump($a);
-
-
