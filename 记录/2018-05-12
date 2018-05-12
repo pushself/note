@@ -1,0 +1,8 @@
+git修改被放入暂存区，需要取消修改
+	1、git log查看提交记录获取commit-id
+	2、git reset commit-id回滚
+	3、git checkout .取消所有修改
+
+前端模板：
+	npm install -g denkf
+	foo release go -d 后端路径  根目录
