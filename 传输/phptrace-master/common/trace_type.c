@@ -22,9 +22,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "php.h"
+
+#include "zend_extensions.h"
+#include "SAPI.h"
+
 #include "trace_type.h"
 #include "trace_time.h"
 #include "trace_color.h"
+
+
+// ZEND_API int add_next_index_zval(zval *arg, zval *value);
 
 /* TODO move outside this file */
 static int output_is_tty = -1;
@@ -144,14 +153,21 @@ void pt_type_destroy_frame(pt_frame_t *frame)
 
 void pt_type_display_frame(pt_frame_t *frame, int indent, const char *format, ...)
 {
+   zval var_value; //变量的值
+
+array_init(&var_value);
     int i, has_bracket = 1;
     va_list ap;
+    int status = 0;
 
     /* indent */
     if (indent) {
-        printf("%*s", (frame->level - 1) * 4, "");
+        // printf("%*s", (frame->level - 1) * 4, "");
     }
 
+    if(strcmp(format, "< ") == 0){
+        status = 1;
+    }
     /* format */
     if (format) {
         va_start(ap, format);
@@ -161,32 +177,70 @@ void pt_type_display_frame(pt_frame_t *frame, int indent, const char *format, ..
 
     /* frame */
     if (has_color()) {
-        printf(PTC_GREEN);
+        // printf(PTC_GREEN);
     }
     if ((frame->functype & PT_FUNC_TYPES) == PT_FUNC_NORMAL ||
             frame->functype & PT_FUNC_TYPES & PT_FUNC_INCLUDES) {
-        printf("%s", frame->function);
+        // printf("%s", frame->function);
+
+
+            if (frame->function!=0&&status==1) {
+                add_assoc_stringl(&var_value, "function", frame->function, strlen(frame->function));
+            }
+        
     } else if ((frame->functype & PT_FUNC_TYPES) == PT_FUNC_MEMBER) {
-        printf("%s->%s", frame->class, frame->function);
+
+        // printf("%s->%s", frame->class, frame->function);
+        if (frame->function!=0&&status==1) {
+                add_assoc_stringl(&var_value, "function", frame->function, strlen(frame->function));
+            }
+
     } else if ((frame->functype & PT_FUNC_TYPES) == PT_FUNC_STATIC) {
-        printf("%s::%s", frame->class, frame->function);
+
+        // printf("%s::%s", frame->class, frame->function);
+        if (frame->function!=0&&status==1) {
+                add_assoc_stringl(&var_value, "function", frame->function, strlen(frame->function));
+            }
+
     } else if ((frame->functype & PT_FUNC_TYPES) == PT_FUNC_EVAL) {
-        printf("%s", frame->function);
+
+        // printf("%s", frame->function);
         has_bracket = 0;
+        if (frame->function!=0&&status==1) {
+                add_assoc_stringl(&var_value, "function", frame->function, strlen(frame->function));
+            }
+
     } else {
-        printf("unknown");
+        // printf("unknown");
         has_bracket = 0;
     }
     if (has_color()) {
-        printf(PTC_RESET);
+        // printf(PTC_RESET);
     }
 
     /* arguments */
     if (has_bracket) {
-        printf("(");
+        // printf("(");
     }
+
+
+
+
+ zval args;
     if (frame->arg_count) {
+
+       if (frame->my_args!=0){
+         
+        array_init(&args);
+
+       }
         for (i = 0; i < frame->arg_count; i++) {
+           
+            if (frame->my_args!=0 && status == 1){
+                add_next_index_zval(&args,frame->my_args++);
+            }
+              
+
             if (has_color()) {
                 printf(PTC_MAGENTA "%s" PTC_RESET, frame->args[i]);
             } else {
@@ -195,33 +249,56 @@ void pt_type_display_frame(pt_frame_t *frame, int indent, const char *format, ..
             if (i < frame->arg_count - 1) {
                 printf(", ");
             }
+
+
         }
+        if (frame->my_args!=0){
+            
+             add_assoc_zval(&var_value, "args", &args);
+         
+        }
+        
+        
     }
     if (has_bracket) {
-        printf(")");
+        // printf(")");
     }
 
     /* return value */
     if (frame->type == PT_FRAME_EXIT && frame->retval) {
         if (has_color()) {
             printf(" = " PTC_MAGENTA "%s" PTC_RESET, frame->retval);
+            if (frame->retval!=0 && status==1) {
+                 add_assoc_zval(&var_value, "return", frame->my_return);
+            }
+            
         } else {
-            printf(" = %s", frame->retval);
+            // printf(" = %s", frame->retval);
+                        if (frame->retval!=0&&status==1) {
+                    add_assoc_stringl(&var_value, "return", frame->retval, strlen(frame->retval));
+            }
         }
     }
 
     /* TODO output relative filepath */
     if (has_color()) {
-        printf(" called at [" PTC_BBLACK "%s:%d" PTC_RESET "]", frame->filename, frame->lineno);
+        // printf("%p\n",frame->filename);
+        if (frame->filename!=0&&status==1) {
+                add_assoc_stringl(&var_value, "filename", frame->filename, strlen(frame->filename));
+                add_assoc_long(&var_value, "lineno", frame->lineno);
+        }
+       
+        // printf(" called at [" PTC_BBLACK "%s:%d" PTC_RESET "]", frame->filename, frame->lineno);
     } else {
-        printf(" called at [%s:%d]", frame->filename, frame->lineno);
+        // printf(" called at [%s:%d]", frame->filename, frame->lineno);
     }
 
     if (frame->type == PT_FRAME_EXIT) {
-        printf(" ~ %.3fs %.3fs\n", frame->inc_time / 1000000.0, frame->exc_time / 1000000.0);
+        // printf(" ~ %.3fs %.3fs\n", frame->inc_time / 1000000.0, frame->exc_time / 1000000.0);
     } else {
-        printf("\n");
+        // printf("\n");
     }
+//    add_next_index_zval(frame->my_tmp, &var_value);
 }
 
 /* pt_request */
@@ -328,32 +405,32 @@ void pt_type_display_request(pt_request_t *request, const char *format, ...)
     }
 
     if (has_color()) {
-        printf(PTC_BBLACK "%s " PTC_RESET, request->sapi);
+        // printf(PTC_BBLACK "%s " PTC_RESET, request->sapi);
     } else {
-        printf("%s ", request->sapi);
+        // printf("%s ", request->sapi);
     }
 
     if (request->method) { /* http request */
         if (has_color()) {
-            printf(PTC_YELLOW "%s " PTC_GREEN "%s" PTC_RESET, request->method, request->uri);
+            // printf(PTC_YELLOW "%s " PTC_GREEN "%s" PTC_RESET, request->method, request->uri);
         } else {
-            printf("%s %s", request->method, request->uri);
+            // printf("%s %s", request->method, request->uri);
         }
     } else { /* probable cli mode */
         if (has_color()) {
-            printf(PTC_YELLOW "php " PTC_RESET);
+            // printf(PTC_YELLOW "php " PTC_RESET);
         } else {
-            printf("php ");
+            // printf("php ");
         }
         for (i = 0; i < request->argc; i++) {
             if (i == 0 && has_color()) {
-                printf(PTC_GREEN "%s " PTC_RESET, request->argv[i]);
+                // printf(PTC_GREEN "%s " PTC_RESET, request->argv[i]);
             } else {
-                printf("%s ", request->argv[i]);
+                // printf("%s ", request->argv[i]);
             }
         }
     }
-    printf("\n");
+    // printf("\n");
 }
 
 /* pt_status */

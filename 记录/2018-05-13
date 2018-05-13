@@ -1,0 +1,32 @@
+编译php加上  --enable-debug
+
+
+在扩展config.m4文件中加入
+if test -z "$PHP_DEBUG" ; then
+    AC_ARG_ENABLE(debug, [--enable-debug compile with debugging system], [PHP_DEBUG=$enableval],[PHP_DEBUG=no] )
+fi
+
+编译扩展加上--enable-debug参数
+
+gdb php
+gdb b 扩展源码中C函数   设置断点
+run “php文件”
+n
+s
+
+
+gd命令：
+continue  执行到下一个断点或程序结束（没有设置断点的话）
+next（执行一行源码但不进入源码函数内部）
+step 执行一行源码而且进入函数内部
+
+nm "动态库文件"   //用来查看动态库的函数名
+
+
+(gdb)info breakpoints
+
+(gdb)disable b_id           //使中断失效，b_id 为中断编号
+
+(gdb)info breakpoints
+
+(gdb)enable b_id         //使中断有效，b_id 为中断编号

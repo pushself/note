@@ -26,10 +26,12 @@
 #include "zend_extensions.h"
 #include "SAPI.h"
 
+#include "sds/sds.h"
+
 #include "trace_comm.h"
 #include "trace_time.h"
 #include "trace_type.h"
-#include "sds/sds.h"
+
 #include "trace_filter.h"
 
 
@@ -101,6 +103,10 @@ PHP_FUNCTION(trace_dump_address);
 PHP_FUNCTION(trace_set_filter);
 #endif
 
+PHP_FUNCTION(my_trace_start);
+PHP_FUNCTION(my_trace_end);
+
+
 static void frame_build(pt_frame_t *frame, zend_bool internal, unsigned char type, zend_execute_data *caller, zend_execute_data *ex, zend_op_array *op_array TSRMLS_DC);
 static int frame_send(pt_frame_t *frame TSRMLS_DC);
 #if PHP_VERSION_ID < 70000
@@ -148,9 +154,11 @@ extern sapi_module_struct sapi_module;
 
 /* True global resources - no need for thread safety here */
 static int le_trace;
-
+zval my_return_arr;
 /* Every user visible function must have an entry in trace_functions[]. */
 const zend_function_entry trace_functions[] = {
+    PHP_FE(my_trace_start, NULL)
+    PHP_FE(my_trace_end, NULL)
 #if TRACE_DEBUG
     PHP_FE(trace_start, NULL)
     PHP_FE(trace_end, NULL)
@@ -200,6 +208,8 @@ PHP_INI_END()
 /* php_trace_init_globals */
 static void php_trace_init_globals(zend_trace_globals *ptg)
 {
+
+
     ptg->enable = ptg->dotrace = 0;
     ptg->data_dir = NULL;
 
@@ -229,10 +239,8 @@ PHP_MINIT_FUNCTION(trace)
     ZEND_INIT_MODULE_GLOBALS(trace, php_trace_init_globals, NULL);
     REGISTER_INI_ENTRIES();
 
-    //判断配置文件是否开启trace，cli模式好像是默认开启
-    //默认就是1
     if (!PTG(enable)) {
-            return SUCCESS;
+        return SUCCESS;
     }
 
     /* Replace executor */
@@ -240,11 +248,11 @@ PHP_MINIT_FUNCTION(trace)
     ori_execute = zend_execute;
     zend_execute = pt_execute;
 #else
-    ori_execute_ex = zend_execute_ex;//把原来的存起来
-    zend_execute_ex = pt_execute_ex;//一次请求执行一次
+    ori_execute_ex = zend_execute_ex;
+    zend_execute_ex = pt_execute_ex;
 #endif
-    ori_execute_internal = zend_execute_internal;//把原来的存起来
-    zend_execute_internal = pt_execute_internal;//每一条php语句都会被执行一次
+    ori_execute_internal = zend_execute_internal;
+    zend_execute_internal = pt_execute_internal;
 
     /* Init comm module */
     snprintf(PTG(sock_addr), sizeof(PTG(sock_addr)), "%s/%s", PTG(data_dir), PT_COMM_FILENAME);
@@ -252,9 +260,6 @@ PHP_MINIT_FUNCTION(trace)
     /* Open ctrl module */
     snprintf(PTG(ctrl_file), sizeof(PTG(ctrl_file)), "%s/%s", PTG(data_dir), PT_CTRL_FILENAME);
     PTD("Ctrl module open %s", PTG(ctrl_file));
-
-
-    //这里应该是创建共享文件，ctrl是文件路径   涉及pt_ctrl   pt_mmap
     if (pt_ctrl_create(&PTG(ctrl), PTG(ctrl_file)) < 0) {
         php_error(E_ERROR, "Trace ctrl file %s open failed", PTG(ctrl_file));
         return FAILURE;
@@ -262,29 +267,24 @@ PHP_MINIT_FUNCTION(trace)
 
     /* Trace in CLI */
     if (PTG(dotrace) && sapi_module.name[0] == 'c' && sapi_module.name[1] == 'l' && sapi_module.name[2] == 'i') {
-
-        //这里应该是通过浏览器访问
         PTG(dotrace) = TRACE_TO_OUTPUT;
     } else {
-
-       //cli下执行的这里
         PTG(dotrace) = 0;
     }
 
-    /* Init exclusive time table */  //     时间表长度  暂时不知道干嘛的
+    /* Init exclusive time table */
     PTG(exc_time_len) = 4096;
-    PTG(exc_time_table) = calloc(PTG(exc_time_len), sizeof(long));//分配内存
-    //分配失败报错
+    PTG(exc_time_table) = calloc(PTG(exc_time_len), sizeof(long));
     if (PTG(exc_time_table) == NULL) {
         php_error(E_ERROR, "Trace exclusive time table init failed");
         return FAILURE;
     }
-//这里好像是判断扩展是否开启debug模式
+
 #if TRACE_DEBUG
     /* always do trace in debug mode */
     PTG(dotrace) |= TRACE_TO_NULL;
 
-    /* register filter const */   //注册过滤器常量
+    /* register filter const */
     REGISTER_LONG_CONSTANT("PT_FILTER_EMPTY", PT_FILTER_EMPTY, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("PT_FILTER_URL", PT_FILTER_URL, CONST_CS | CONST_PERSISTENT);
     REGISTER_LONG_CONSTANT("PT_FILTER_FUNCTION_NAME", PT_FILTER_FUNCTION_NAME, CONST_CS | CONST_PERSISTENT);
@@ -293,11 +293,11 @@ PHP_MINIT_FUNCTION(trace)
 
     return SUCCESS;
 }
-//最后阶段的清理操作
+
 PHP_MSHUTDOWN_FUNCTION(trace)
 {
     UNREGISTER_INI_ENTRIES();
-//是否开启，如果没有开启直接跳过
+
     if (!PTG(enable)) {
         return SUCCESS;
     }
@@ -308,26 +308,26 @@ PHP_MSHUTDOWN_FUNCTION(trace)
 #else
     zend_execute_ex = ori_execute_ex;
 #endif
-    zend_execute_internal = ori_execute_internal;//扩展关闭的时候将原来的钩子还原
+    zend_execute_internal = ori_execute_internal;
 
-    /* Destroy exclusive time table *///释放内存
+    /* Destroy exclusive time table */
     if (PTG(exc_time_table) != NULL) {
         free(PTG(exc_time_table));
     }
 
     /* Close ctrl module */
     PTD("Ctrl module close");
-    pt_ctrl_close(&PTG(ctrl));//关闭之前打开的共享文件  共享文件应该是用来判断是否启动trace
+    pt_ctrl_close(&PTG(ctrl));
 
     /* Close comm module */
     if (PTG(sock_fd) != -1) {
         PTD("Comm socket close");
-        pt_comm_close(PTG(sock_fd), NULL);//关闭socket    socket应该是用来从扩展发送数据到控制台的工具
+        pt_comm_close(PTG(sock_fd), NULL);
         PTG(sock_fd) = -1;
     }
 
     /* Clear pft module */
-    pt_filter_dtr(&PTG(pft));//pft存的应该是过滤类和方法的
+    pt_filter_dtr(&PTG(pft));
 
     return SUCCESS;
 }
@@ -390,17 +390,12 @@ PHP_RSHUTDOWN_FUNCTION(trace)
             request_send(&PTG(request) TSRMLS_CC);
         }
         if (PTG(dotrace) & TRACE_TO_OUTPUT) {
-            pt_type_display_request(&PTG(request), "< ");
+            // pt_type_display_request(&PTG(request), "< ");
         }
     }
 
     return SUCCESS;
 }
-
-
-
-
-
 
 PHP_MINFO_FUNCTION(trace)
 {
@@ -410,7 +405,16 @@ PHP_MINFO_FUNCTION(trace)
 
     DISPLAY_INI_ENTRIES();
 }
-
+PHP_FUNCTION(my_trace_start)
+{
+    PTG(dotrace) |= TRACE_TO_OUTPUT;
+    array_init(&my_return_arr);
+}
+PHP_FUNCTION(my_trace_end)
+{
+    PTG(dotrace) &= ~TRACE_TO_OUTPUT;
+    RETURN_ZVAL(&my_return_arr,1,0);
+}
 
 /**
  * Trace Interface
@@ -673,6 +677,7 @@ static void frame_build(pt_frame_t *frame, zend_bool internal, unsigned char typ
     args = NULL;
     frame->arg_count = 0;
     frame->args = NULL;
+    frame->my_args = NULL;
 
     /* names */
     if (zf->common.function_name) {
@@ -743,13 +748,23 @@ static void frame_build(pt_frame_t *frame, zend_bool internal, unsigned char typ
         if (frame->arg_count) {
             i = 0;
             zval *p = ZEND_CALL_ARG(ex, 1);
+            frame->my_args = p;
+            if (p!=0){
+                zval tt;
+                ZVAL_COPY_VALUE(&tt, p);
+                zval_copy_ctor(&tt);
+                add_next_index_zval(&my_return_arr, &tt);
+            }
             if (ex->func->type == ZEND_USER_FUNCTION) {
+                 
                 uint32_t first_extra_arg = ex->func->op_array.num_args;
 
                 if (first_extra_arg && frame->arg_count > first_extra_arg) {
                     while (i < first_extra_arg) {
+                        
                         frame->args[i++] = repr_zval(p++, 32);
                     }
+                   
                     p = ZEND_CALL_VAR_NUM(ex, ex->func->op_array.last_var + ex->func->op_array.T);
                 }
             }
@@ -815,6 +830,7 @@ static void frame_build(pt_frame_t *frame, zend_bool internal, unsigned char typ
         if (add_filename) {
             frame->arg_count = 1;
             frame->args = calloc(frame->arg_count, sizeof(sds));
+         
             frame->args[0] = sdscatrepr(sdsempty(), P7_STR(zf->op_array.filename), strlen(P7_STR(zf->op_array.filename)));
         }
     }
@@ -1060,6 +1076,15 @@ static int status_send(pt_status_t *status TSRMLS_DC)
  */
 static sds repr_zval(zval *zv, int limit TSRMLS_DC)
 {
+
+ zval var_value; //变量的值
+
+// array_init(&var_value);
+// add_assoc_zval(&var_value, "args", zv);
+
+// add_next_index_zval(&my_return_arr, zv);
+
+
     int tlen = 0;
     char buf[256], *tstr = NULL;
     sds result;
@@ -1085,14 +1110,18 @@ again:
             return sdsnew("false");
 #endif
         case IS_NULL:
+        printf("a\n");
             return sdsnew("NULL");
         case IS_LONG:
+        printf("b\n");
             snprintf(buf, sizeof(buf), "%ld", Z_LVAL_P(zv));
             return sdsnew(buf);
         case IS_DOUBLE:
+        printf("c\n");
             snprintf(buf, sizeof(buf), "%.*G", (int) EG(precision), Z_DVAL_P(zv));
             return sdsnew(buf);
         case IS_STRING:
+        printf("d\n");
             tlen = (limit <= 0 || Z_STRLEN_P(zv) < limit) ? Z_STRLEN_P(zv) : limit;
             result = sdscatrepr(sdsempty(), Z_STRVAL_P(zv), tlen);
             if (limit > 0 && Z_STRLEN_P(zv) > limit) {
@@ -1100,9 +1129,12 @@ again:
             }
             return result;
         case IS_ARRAY:
+        printf("e\n");
+        printf("%s\n",sdscatprintf(sdsempty(), "array(%d)", zend_hash_num_elements(Z_ARRVAL_P(zv))));
             /* TODO more info */
             return sdscatprintf(sdsempty(), "array(%d)", zend_hash_num_elements(Z_ARRVAL_P(zv)));
         case IS_OBJECT:
+        printf("f\n");
 #if PHP_VERSION_ID < 70000
             if (Z_OBJ_HANDLER(*zv, get_class_name)) {
                 Z_OBJ_HANDLER(*zv, get_class_name)(zv, (const char **) &tstr, (zend_uint *) &tlen, 0 TSRMLS_CC);
@@ -1118,6 +1150,7 @@ again:
 #endif
             return result;
         case IS_RESOURCE:
+        printf("h\n");
 #if PHP_VERSION_ID < 70000
             tstr = (char *) zend_rsrc_list_get_rsrc_type(Z_LVAL_P(zv) TSRMLS_CC);
             return sdscatprintf(sdsempty(), "resource(%s)#%ld", tstr ? tstr : "Unknown", Z_LVAL_P(zv));
@@ -1176,7 +1209,7 @@ static void handle_command(void)
     /* Open comm socket */
     if (PTG(sock_fd) == -1) {
         PTD("Comm socket connect to %s", PTG(sock_addr));
-        PTG(sock_fd) = pt_comm_connect(PTG(sock_addr));//socket连接
+        PTG(sock_fd) = pt_comm_connect(PTG(sock_addr));
         if (PTG(sock_fd) == -1) {
             PTD("Connect to %s failed, errmsg: %s", PTG(sock_addr), strerror(errno));
             handle_error(TSRMLS_C);
@@ -1186,7 +1219,7 @@ static void handle_command(void)
 
     /* Handle message */
     while (1) {
-        msg_type = pt_comm_recv_msg(PTG(sock_fd), &msg);//从socket读取数据
+        msg_type = pt_comm_recv_msg(PTG(sock_fd), &msg);
         PTD("recv message type: 0x%08x len: %d", msg_type, msg->len);
 
         switch (msg_type) {
@@ -1241,6 +1274,7 @@ ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zen
 ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zval *return_value)
 #endif
 {
+    int i = 0;
     long dotrace;
     zend_bool dobailout = 0;
     zend_execute_data *caller = execute_data;
@@ -1312,10 +1346,12 @@ ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zva
             frame_send(&frame TSRMLS_CC);
         }
         if (dotrace & TRACE_TO_OUTPUT) {
-            pt_type_display_frame(&frame, 1, "> ");
+            frame.my_tmp = &my_return_arr;
+            // pt_type_display_frame(&frame, 1, "> ");
         }
 
         frame.inc_time = pt_time_usec();
+        i++;
     }
 
     /* Call original under zend_try. baitout will be called when exit(), error
@@ -1360,6 +1396,7 @@ ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zva
     } zend_end_try();
 
     if (dotrace) {
+        i++;
         frame.inc_time = pt_time_usec() - frame.inc_time;
 
         /* Calculate exclusive time */
@@ -1377,8 +1414,10 @@ ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zva
 #else
             if (return_value) { /* internal */
                 frame.retval = repr_zval(return_value, 32);
+                frame.my_return = return_value;
             } else if (execute_data->return_value) { /* user function */
                 frame.retval = repr_zval(execute_data->return_value, 32);
+                frame.my_return = execute_data->return_value;
             }
 #endif
         }
@@ -1389,8 +1428,10 @@ ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zva
             frame_send(&frame TSRMLS_CC);
         }
         if (PTG(dotrace) & TRACE_TO_OUTPUT & dotrace) {
-            pt_type_display_frame(&frame, 1, "< ");
+            frame.my_tmp = &my_return_arr;
+            
         }
+        pt_type_display_frame(&frame, 1, "< ");
 
 #if PHP_VERSION_ID < 70000
         /* Free return value */
@@ -1408,6 +1449,7 @@ ZEND_API void pt_execute_core(int internal, zend_execute_data *execute_data, zva
     if (dobailout) {
         zend_bailout();
     }
+    // printf("计数：%d\n", i);
 }
 
 #if PHP_VERSION_ID < 50500

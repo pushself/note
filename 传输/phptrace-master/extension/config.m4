@@ -35,4 +35,8 @@ if test "$PHP_TRACE" != "no"; then
 
 fi
 
+if test -z "$PHP_DEBUG" ; then
+    AC_ARG_ENABLE(debug, [--enable-debug compile with debugging system], [PHP_DEBUG=$enableval],[PHP_DEBUG=no] )
+fi
+
 dnl vim:et:ts=2:sw=2

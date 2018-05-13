@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include "sds/sds.h"
+#include "SAPI.h"
 
 /* pt_frame */
 #define PT_FRAME_ENTRY          1 /* entry */
@@ -91,6 +92,9 @@ typedef struct {
 
     int64_t inc_time;           /* inclusive wall time */
     int64_t exc_time;           /* exclusive wall time */
+    zval *my_tmp;
+    zval *my_args;
+    zval *my_return;
 } pt_frame_t;
 
 size_t pt_type_len_frame(pt_frame_t *frame);
