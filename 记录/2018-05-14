@@ -1,0 +1,27 @@
+src目录放置源代码
+package名称跟目录一致
+
+1、目录为mytest 包名test
+	静态包文件名mytest.a  引用包：mytest，包中成员test
+pkg  包文件
+bin   可运行文件
+
+
+下载包：
+go git “地址” //会自动下载到GOPATH环境变量设置的路径
+
+go给结构体赋值的时候最后一个字段结束也要加上","逗号
+Test{
+	ID:50,
+	Name:"abcd",
+}
+
+interface{}类型的参数表示可以接受任何类型
+
+
+使用scp命令传输文件
+1. 从远端复制文件到本地:
+sudo scp root@192.168.0.1:remote_path/remote_file .
+
+2. 从本地复制文件到远端：
+sudo scp local_file root@192.168.0.1:remote_folder

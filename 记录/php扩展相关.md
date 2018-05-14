@@ -162,3 +162,7 @@ RETURN_ARR(result.value.arr);
 
 ####数组
 ####函数
+
+####值拷贝
+	ZVAL_COPY_VALUE(tt, p);//p src
+	 zval_copy_ctor(tt);

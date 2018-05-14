@@ -108,9 +108,3 @@ typedef struct {
 } pt_frame_t;
 
 typedef char *sds;
-
-
-
-
-函数调用没有传入参数  当前执行的时候参数字段为空
-没有被使用的参数会被优化掉

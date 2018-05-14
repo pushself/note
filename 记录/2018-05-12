@@ -6,3 +6,7 @@ git修改被放入暂存区，需要取消修改
 前端模板：
 	npm install -g denkf
 	foo release go -d 后端路径  根目录
+
+npm nvm
+npm i
+nvm ls
