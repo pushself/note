@@ -1,0 +1,47 @@
+thinkphp5.0
+区间查询：
+where('字段', ['>', 0])
+
+table()//指名数据表名
+
+find()//数据不存在返回null
+
+select()//数据不存在返回空数组   查询非法或者错误返回false
+
+find select默认返回数组
+
+query()//原生sql查询查询错误或者非法返回false 
+
+show processlist;
+
+golang：
+数组：初始化时长度固定，不可修改 len(arr)获取长度
+
+传入可变参数的数据存在数组中，传入的时候在变量前面加"..."Test(Name...) 函数内外Name变量地址相同
+
+接口相关：
+	变量类型是接口指针才能赋值给接口指针（如下示例：t1 = &t3）
+	接口类型的变量可以接收一个实现了接口的类型（Test）的指针
+type ITest interface {
+}
+type Test struct {
+	Name string
+}
+/*正确*/
+	var t1 *ITest
+	var t3 ITest
+	var t2 Test
+	t2 = Test{
+		Name: "haha",
+	}
+	t3 = t2
+//	t3 = &t2//正确
+	t1 = &t3
+/*错误*/
+	var t1 *ITest
+	var t2 Test
+	t2 = Test{
+		Name: "haha",
+	}
+
+	t1 = &t2
