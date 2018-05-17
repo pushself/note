@@ -1,0 +1,88 @@
+git找回分支：
+	git branch 分支名 分支id
+	reflog命令可以找回分支id
+
+go：
+函数外面声名的变量是全局的
+
+
+局部变量：
+示例1：
+func main()
+{
+	var i *int
+	test2(&i)
+	fmt.Printf("%p\n", i)//0xc4200180c0
+	fmt.Println(*i)
+}
+func test2(ii **int) {
+	var i int
+	i = 900
+	*ii = &i
+	fmt.Printf("%p\n", &i)//0xc4200180c0
+}
+示例：2
+func main() {
+	var i *int
+	i = test2()
+	fmt.Printf("%p\n", i)//0xc4200180c0
+	fmt.Println(*i)
+}
+func test2() *int {
+	var i int
+	i = 900
+
+	fmt.Printf("%p\n", &i)//0xc4200180c0
+	return &i
+}
+
+
+
+总结：局部变量的指针被外部引用不会被销毁
+
+
+
+示例3：
+var p *int
+
+func foo() (*int) {
+	var i int = 5
+	fmt.Printf("1->%p\n", &i)
+	return &i
+}
+
+func bar() {
+	fmt.Printf("3->%p\n", p)//而这里使用的是全局变量p
+	fmt.Println(*p)
+}
+
+func main() {
+	p := foo()//由于已经声名了一个同名变量p，使用":="赋值会覆盖全局变量创建一个新的变量
+	fmt.Printf("2->%p\n", p)
+	fmt.Println(*p)
+	bar()
+	fmt.Printf("4->%p\n", p)
+	fmt.Println(*p)
+}
+
+import(
+_ "包名"//这样就不会提示未使用的引用
+)
+
+
+
+
+
+数据库操作：
+SetMaxOpenConns最大连接数
+SetMaxIdleConns空闲连接数
+
+DSN参数
+readTimeout 读超时
+writeTimeout 写超时
+timeout  应该是连接超时
+
+DSN：可选参数用方括号标记
+除了数据库名  其他都是可选的
+[username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
+
