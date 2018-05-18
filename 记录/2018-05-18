@@ -1,0 +1,11 @@
+AND和OR优先级
+没有（）的干预下先执行AND语句
+select * from table where 1 and 2 or 3
+等价于
+select * from table where (1 and 2) or 3
+
+
+where join on
+根据on条件筛选后进行连表，最后where对最后的结果筛选
+
+alter table 操作，会锁整张表
