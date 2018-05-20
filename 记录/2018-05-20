@@ -1,0 +1,42 @@
+入口函数main是以goroutime运行
+CSP模式
+主goroutime退出不会等待子goroutime结束
+
+默认情况下,进程启动后仅允许一一个系统线程服务于 goroutine
+	环境变量
+	标准库函数 runtime.GOMAXPROCS 修改
+
+time -p ./test //对执行程序计时
+
+
+疑问：
+go build -o test  -o参数，只被允许在编译一个单独包时使用，并且强制将编译的可执行文件或object写入户名的文件名中
+GOMAXPROCS=2 time -p ./test
+go是如何做到编译二进制后对go进行管理之类的，而不同于c
+go应该是有一套运行时，go语言在之上运行，c语言没有
+指针还有 unsafe.Pointer 和 uintptr 两种形态
+cgo C.malloc 等函数所返回指针,与 GC 无无关
+可以用用 unsafe.Pointer、uintptr 创建 "dangling pointer" 等非非法指针
+go build -gcflags "-N -l" && GODEBUG="gctrace=1" ./test
+
+
+调用runtime.Goexit终止当前goroutime，调度器确保defer调用被执行
+runtime.Gosched()让出底层协程，当前goroutime暂停，返回队列等待下一次被调度执行
+
+引用类型channel是CSp模式的具体实现，内部实现了同步，确保并发安全
+
+channel：应该使用指针规避大对象拷贝，多个元素打包，减少缓存区大小
+
+结构体内存对齐
+
+interface
+	*itab
+	*data
+
+
+在 Go 运行时中有一个独立的进程，即垃圾收集器（GC）
+通过 runtime 包访问 GC 进程
+指针构成的 "循环引用用" 加上 runtime.SetFinalizer 会导致内存泄露
+
+1.4版本一下是用c实现的调度器
+
