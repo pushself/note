@@ -54,3 +54,7 @@ int的零值是0不是nil
 
 git:回滚后  是需要重新提交的
 如果需要取消回滚，git checkout . & git pull
+
+
+mysql：
+show VARIABLES;
