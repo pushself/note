@@ -16,5 +16,7 @@ if err != nil {
 	println(a)
 }
 a, err := test()//错误  因为a和err变量都已经在上面声名
-b, err := test()//正确
+b, err := test()//正确，但是不会重新创建err，因为上面已经有了
+
+
 
