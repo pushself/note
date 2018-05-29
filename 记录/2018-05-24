@@ -1,0 +1,5 @@
+nginx：日志
+
+error_log ：错误日志
+log_format：日志格式
+access_log：日志存放地址
