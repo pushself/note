@@ -1,0 +1,1 @@
+./xorm reverse mysql "u_chenchao:UaRK1VOaogH3obHOS2V86Um5@tcp(rm-wz947996d07s0g62zxo.mysql.rds.aliyuncs.com:3306)/17zwdv3_product?parseTime=True" golangproject/src/github.com/go-xorm/cmd/xorm/templates/goxorm/
