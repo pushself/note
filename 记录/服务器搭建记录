@@ -1,0 +1,57 @@
+sudo apt-get install nginx
+sudo apt install php php-fpm php7.0-mysql
+php7.0-curl
+
+
+/etc/php/php7.0/fpm
+修改php.ini
+
+cgi.fix_pathinfo=1 改为 cgi.fix_pathinfo=0
+
+/etc/nginx/sites-available
+
+server {
+    listen 80;
+    listen 443 ssl;
+    server_name user.17zwd.com user.17zwd.develop user.17zwd.t;
+    root "/home/wwwroot/17zwd-user-backend/public";
+    index index.html index.htm index.php;
+    ssl on;
+    ssl_certificate     /home/wwwroot/ssl-cert/user.cert.pem;
+    ssl_certificate_key /home/wwwroot/ssl-cert/user.key.pem;
+    charset utf-8;
+
+    location / {
+        if (!-e $request_filename){
+            rewrite ^/(.*)$ /index.php?s=/$1 last;
+        }
+    }
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    access_log off;
+    error_log  /var/log/nginx/17zwd-user-error.log;
+
+    location ~* ^(/images|/Static).+.(jpg|jpeg|css|gif|png|ico) {
+        access_log              off;
+    }
+    location ~ \.php$ {
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass unix:/var/run/php/php7.0-fpm.sock;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        fastcgi_intercept_errors off;
+        fastcgi_buffer_size 16k;
+        fastcgi_buffers 4 16k;
+        fastcgi_connect_timeout 300;
+        fastcgi_send_timeout 300;
+        fastcgi_read_timeout 720000;
+        include fastcgi_params;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+
