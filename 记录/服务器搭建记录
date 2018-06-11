@@ -55,3 +55,15 @@ server {
     }
 }
 
+
+
+1.添加php7.1的仓库
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository ppa:ondrej/php
+---------(阿里云或者参考第一部分割线下面是否使用)如果有问题-------
+sudo LC_ALL=en_US.UTF-8 add-apt-repository ppa:ondrej/php
+2.安装php7.1及其扩展
+sudo apt-get update 
+sudo apt-cache search php7.1
+apt-get install -y php7.1 php7.1-mysql php7.1-fpm php 7.1-curl php7.1-xml php7.1-mcrypt php7.1-json php7.1-gd php7.1-mbstring
+
