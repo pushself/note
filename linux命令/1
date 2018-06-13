@@ -1,0 +1,2 @@
+1、高亮ERROR
+tail -f xxx.log | perl -pe 's/(ERROR)/\e[1;31m$1\e[0m/g'  
