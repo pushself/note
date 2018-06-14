@@ -1,6 +1,5 @@
 sudo apt-get install nginx
-sudo apt install php php-fpm php7.0-mysql
-php7.0-curl
+sudo apt install php php-fpm php7.0-mysql php7.0-curl
 
 
 /etc/php/php7.0/fpm
@@ -67,3 +66,12 @@ sudo apt-get update
 sudo apt-cache search php7.1
 apt-get install -y php7.1 php7.1-mysql php7.1-fpm php 7.1-curl php7.1-xml php7.1-mcrypt php7.1-json php7.1-gd php7.1-mbstring
 
+
+
+sites-available文件夹中的配置文件软连接到sites-enabled目录，nginx.conf配置如下
+include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*.conf;
+
+
+
+nginx配置文件ssl是用来https的
