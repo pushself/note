@@ -1,0 +1,14 @@
+apt-get install node npm
+sudo npm install -g n
+
+切换版本:n 4.4.5
+npm install -g denkf
+
+node版本4.4.5
+
+
+切换版本后出现一些模板问题，删除模板重新npm安装
+
+
+
+foo release go -d 路径
