@@ -19,9 +19,4 @@ Test{
 interface{}类型的参数表示可以接受任何类型
 
 
-使用scp命令传输文件
-1. 从远端复制文件到本地:
-sudo scp root@192.168.0.1:remote_path/remote_file .
 
-2. 从本地复制文件到远端：
-sudo scp local_file root@192.168.0.1:remote_folder

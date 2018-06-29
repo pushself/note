@@ -1,0 +1,5 @@
+git clone 个人分支
+git remote add up 团队仓库
+git commit -am ""
+git pull up master
+git push
