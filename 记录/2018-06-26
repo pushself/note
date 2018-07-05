@@ -3,3 +3,8 @@ git remote add up 团队仓库
 git commit -am ""
 git pull up master
 git push
+
+
+git remote rm "name"
+git remote show
+git remote -v
